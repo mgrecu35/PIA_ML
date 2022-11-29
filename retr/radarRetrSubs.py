@@ -4,8 +4,8 @@ import numpy as np
 from lkTables import *
 
 lkT=scattTables()
-betaR= 0.7116278
-alphaR=10**(-3.19939512)
+betaR= 0.7616278
+alphaR=10**(-3.19939512)*1.3
 betaS=1.0346435
 alphaS=10**(-5.29043193)
 
@@ -53,6 +53,7 @@ def getZKa_graup(dnw,zc,lkT,dr):
     salbKa=np.zeros((n),float)
     asymKa=np.zeros((n),float)
     dm=np.zeros((n),float)
+    piaKu=0
     for k in range(n):
         if zc[k]>12:
             ibin=int((zc[k]-10*dnw[k]+12)/0.25)
@@ -65,6 +66,7 @@ def getZKa_graup(dnw,zc,lkT,dr):
             zka[k]=lkT.zKaG[ibin]+10*dnw[k]
             zka_true[k]=lkT.zKaG[ibin]+10*dnw[k]
             piaKa+=lkT.attKaG[ibin]*dr*10**(dnw[k])
+            piaKu+=2*lkT.attKuG[ibin]*dr*10**(dnw[k])
             zka[k]-=piaKa
             piaKa+=lkT.attKaG[ibin]*dr*10**(dnw[k])
             pRate[k]=lkT.graupRate[ibin]*10**(dnw[k])
@@ -72,7 +74,7 @@ def getZKa_graup(dnw,zc,lkT,dr):
             salbKa[k]=lkT.salbG[ibin,3]
             asymKa[k]=lkT.asymG[ibin,3]
             dm[k]=lkT.dmg[ibin]
-    return zka,zka_true,piaKa,pRate,kextKa,salbKa,asymKa,dm
+    return zka,zka_true,piaKa,pRate,kextKa,salbKa,asymKa,dm,piaKu
 
 def getZKa_snow(dnw,zc,lkT,dr):
     n=zc.shape[0]
@@ -80,6 +82,7 @@ def getZKa_snow(dnw,zc,lkT,dr):
     zka_true=np.zeros((n),float)-99
     pRate=np.zeros((n),float)-99
     piaKa=0
+    piaKu=0
     kextKa=np.zeros((n),float)+1e-4
     salbKa=np.zeros((n),float)
     asymKa=np.zeros((n),float)
@@ -98,16 +101,17 @@ def getZKa_snow(dnw,zc,lkT,dr):
             piaKa+=lkT.attKaS[ibin]*dr*10**(dnw[k])
             zka[k]-=piaKa
             piaKa+=lkT.attKaS[ibin]*dr*10**(dnw[k])
+            piaKu+=2*lkT.attKuS[ibin]*dr*10**(dnw[k])
             pRate[k]=lkT.snowRate[ibin]*10**(dnw[k])
             kextKa[k]=lkT.kextS[ibin,3]*10**dnw[k]
             salbKa[k]=lkT.salbS[ibin,3]
             asymKa[k]=lkT.asymS[ibin,3]
             dm[k]=lkT.dms[ibin]
-    return zka,zka_true,piaKa,pRate,kextKa,salbKa,asymKa,dm
+    return zka,zka_true,piaKa,pRate,kextKa,salbKa,asymKa,dm,piaKu
 
 
 
-def getZKa_rain(dnw,zc,lkT,dr,piaKa):
+def getZKa_rain(dnw,zc,lkT,dr,piaKa,piaKu,dbin):
     n=zc.shape[0]
     zka=np.zeros((n),float)-99
     zka_true=np.zeros((n),float)-99
@@ -116,14 +120,16 @@ def getZKa_rain(dnw,zc,lkT,dr,piaKa):
     salbKa=np.zeros((n),float)
     asymKa=np.zeros((n),float)
     dm=np.zeros((n),float)
+    attKu=0.0
     for k in range(n):
         if zc[k]>12:
-            zkaR,attKaR,pRateR,kextKaR,salbKaR,asymKaR,dmR=getRainProp(zc[k],dnw[k],lkT)
+            zkaR,attKaR,pRateR,kextKaR,salbKaR,asymKaR,dmR,attKuR=getRainProp(zc[k],dnw[k],lkT)
             if k<2:
-                zkaS,attKaS,pRateS,kextKaS,salbKaS,asymKaS,dmS=getSnowProp(zc[k],dnw[k],lkT)
+                zkaS,attKaS,pRateS,kextKaS,salbKaS,asymKaS,dmS,attKuS=getSnowProp(zc[k],dnw[k],lkT)
                 fract=(k+1)/3.
                 zkam=10.0*np.log10(fract*10**(0.1*zkaR)+(1-fract)*10**(0.1*zkaS))
                 attKa=fract*attKaR+(1-fract)*attKaS
+                attKu=fract*attKuR+(1-fract)*attKuS
                 pRatem=fract*pRateR+(1-fract)*pRateS
                 #print(zkaG,zkaR)
                 #print(kextKaS,salbKaS,asymKaS)
@@ -135,6 +141,7 @@ def getZKa_rain(dnw,zc,lkT,dr,piaKa):
             else:
                 zkam=zkaR
                 attKa=attKaR
+                attKu=attKuR
                 pRatem=pRateR
                 kextKa[k]=kextKaR
                 salbKa[k]=salbKaR
@@ -143,13 +150,16 @@ def getZKa_rain(dnw,zc,lkT,dr,piaKa):
             zka[k]=zkam
             zka_true[k]=zkam
             piaKa+=attKa*dr
+            piaKu+=attKu*dr
             zka[k]-=piaKa
             piaKa+=attKa*dr
+            piaKu+=attKu*dr
             pRate[k]=pRatem
             dm[k]=lkT.dmr[ibin]
+    piaKu+=attKu*dr*2*dbin
             #if k<2:
             #    print(zka[k]+piaKa,piaKa)
-    return zka,zka_true,piaKa,pRate,kextKa,asymKa,salbKa,dm
+    return zka,zka_true,piaKa,pRate,kextKa,asymKa,salbKa,dm,piaKu
 
 
 def getZKa_mmrain(dnw,zc,lkT,dr,piaKa):
@@ -215,14 +225,15 @@ def getZKa_mmrain(dnw,zc,lkT,dr,piaKa):
     return zka,zka_true,piaKa,pRate,kextKa,asymKa,salbKa,dm
 
 
-def ret1D(zm1,bzd,bcf1,alphaS,betaS,alphaR,betaR,dr,lkT,dnw):
+def ret1D(zm1,bzd,bcf1,alphaS,betaS,alphaR,betaR,dr,lkT,dnw,dbin):
     zc1=zm1.copy()
     zcs,pias=hb(zm1[0:bzd],10**dnw[0:bzd],alphaS,betaS,dr)
     zc1[0:bzd]=zcs
     zcr,pia=hb(zm1[bzd+1:bcf1]+pias[-1],10**dnw[bzd+1:bcf1],alphaR,betaR,dr)
     zc1[bzd+1:bcf1]=zcr
-    zkaG,zkaG_true,piaG,pRateG,kextKaG,salbKaG,asymKaG,dmG=getZKa_graup(dnw,zcs,lkT,dr)
-    zkaR,zkaR_true,piaKaR,pRateR,kextKaR,asymKaR,salbKaR,dmR=getZKa_rain(dnw[bzd:],zcr,lkT,dr,piaG)
+    zkaG,zkaG_true,piaKaG,pRateG,kextKaG,salbKaG,asymKaG,dmG,piaKuG=getZKa_graup(dnw,zcs,lkT,dr)
+    zkaR,zkaR_true,piaKaR,pRateR,kextKaR,asymKaR,salbKaR,dmR,piaKu=getZKa_rain(dnw[bzd:],zcr,lkT,\
+                                                                               dr,piaKaG,piaKuG,dbin)
     zkaG=np.ma.array(zkaG,mask=zkaG<0)
     zkaR=np.ma.array(zkaR,mask=zkaR<0)
     zka_sim=np.concatenate((zkaG,zkaR))
@@ -230,7 +241,7 @@ def ret1D(zm1,bzd,bcf1,alphaS,betaS,alphaR,betaR,dr,lkT,dnw):
     zka_sim=np.ma.array(zka_sim,mask=zka_sim<0)
     pRate=np.concatenate((pRateG,pRateR))
     return zka_sim,piaKaR,kextKaR,asymKaR,salbKaR,kextKaG,salbKaG,asymKaG,\
-        zkaG_true,zkaR_true,pRate,dm
+        zkaG_true,zkaR_true,pRate,dm,piaKu
 
 def ret1Dst(zm1,bzd,bbPeak,bcf1,alphaS,betaS,alphaR,betaR,dr,lkT,dnw):
     zc1=zm1.copy()

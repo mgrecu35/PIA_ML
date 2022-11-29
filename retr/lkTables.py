@@ -59,14 +59,20 @@ def getGraupProp(zc,dnw,lkT):
             dnw=(zc-lkT.zKaG[271])/10.
         zka=lkT.zKaG[ibin]+10*dnw
         attKa=lkT.attKaG[ibin]*10**dnw
+        attKu=lkT.attKuG[ibin]*10**dnw
         pRate=lkT.graupRate[ibin]*10**dnw
+        kext_Ka=lkT.kextG[ibin,3]*10**dnw
+        salb_Ka=lkT.salbG[ibin,3]
+        asym_Ka=lkT.asymG[ibin,3]
         dm=lkT.dmg[ibin]
     else:
         zka=-99
         attKa=0
         pRate=0
+        attKu=0
+        kext_Ka,salb_Ka,asym_Ka=0,0,0
         dm=0
-    return zka,attKa,pRate,dm
+    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm,attKu
 
 def getSnowProp(zc,dnw,lkT):
     if zc>12:
@@ -79,19 +85,20 @@ def getSnowProp(zc,dnw,lkT):
             dnw=(zc-lkT.zKaS[252])/10.
         zka=lkT.zKaS[ibin]+10*dnw
         attKa=lkT.attKaS[ibin]*10**dnw
+        attKu=lkT.attKuS[ibin]*10**dnw
         pRate=lkT.snowRate[ibin]*10**dnw
         kext_Ka=lkT.kextS[ibin,3]*10**dnw
         salb_Ka=lkT.salbS[ibin,3]
         asym_Ka=lkT.asymS[ibin,3]
         dm=lkT.dms[ibin]
-        
     else:
         zka=-99
         attKa=0
+        attKu=0
         pRate=0
         kext_Ka,salb_Ka,asym_Ka=0,0,0
         dm=0
-    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm
+    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm,attKu
 
 
 def getBBProp(zc,dnw,lkT):
@@ -105,6 +112,7 @@ def getBBProp(zc,dnw,lkT):
             dnw=(zc-lkT.zKuBB[271])/10.
         zka=lkT.zKaBB[ibin]+10*dnw
         attKa=lkT.attKaBB[ibin]*10**dnw
+        attKu=lkT.attKuBB[ibin]*10**dnw
         pRate=lkT.precRateBB[ibin]*10**dnw
         kext_Ka=lkT.kextBB[ibin,3]*10**dnw
         salb_Ka=lkT.salbBB[ibin,3]
@@ -113,10 +121,11 @@ def getBBProp(zc,dnw,lkT):
     else:
         zka=-99
         attKa=0
+        attKu=0
         pRate=0
         kext_Ka,salb_Ka,asym_Ka=0,0,0
         dm=0
-    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm
+    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm,attKu
 
 def getRainProp(zc,dnw,lkT):
     if zc>12:
@@ -129,6 +138,7 @@ def getRainProp(zc,dnw,lkT):
             dnw=(zc-lkT.zKaR[288])/10.
         zka=lkT.zKaR[ibin]+10*dnw
         attKa=lkT.attKaR[ibin]*10**dnw
+        attKu=lkT.attKuR[ibin]*10**dnw
         pRate=lkT.rainRate[ibin]*10**dnw
         kext_Ka=lkT.kextR[ibin,3]*10**dnw
         salb_Ka=lkT.salbR[ibin,3]
@@ -137,8 +147,9 @@ def getRainProp(zc,dnw,lkT):
     else:
         zka=-99
         attKa=0
+        attKu=0
         pRate=0
         kext_Ka,salb_Ka,asym_Ka=0,0,0
         dm=0
-    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm
+    return zka,attKa,pRate,kext_Ka,salb_Ka,asym_Ka,dm,attKu
         
