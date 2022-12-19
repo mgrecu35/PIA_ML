@@ -47,11 +47,17 @@ zKuL=fh["zKaData"][:]
 stormTop=fh["stormTop"][:]
 pTypeL=fh["pType"][:]
 sfcPrecip1L=fh["sfcPrecip"][:]
+sfcPrecip2D=fh["sfcPrecip2D"][:]
+sfcPrecip1L=sfcPrecip2D[:,:,4].mean(axis=-1)
 sfcPrecip1L=sfcPrecip1L[:,np.newaxis]
+
+
 print("preparing tf model...")
 scalerZKu = StandardScaler()
 scalerPrec=StandardScaler()
-piaF=fh["piaF"][:,:,:,0]
+piaF=fh["piaF"][:,:,:,1]
+piaF[piaF>30]=30
+#stop
 
 #539424
 zKu9x9=np.swapaxes(zKuL,1,2)
@@ -94,7 +100,7 @@ for i in range(nm):
 X[:nt,:,:,npc]=pTypeL[:,:,:]/3.0
 X[:nt,:,:,npc+1]=(stormTop-5.2e3)/4.2e3
 X[:nt,:,:,npc+2]=(zmax-19.8)/8.23
-X[:nt,:,:,npc+3]=(piaF[:nt,:,:]-0.4)/2.
+X[:nt,:,:,npc+3]=(piaF[:nt,:,:]-2)/5.
 for iadd,ipos in enumerate(a[0]):
     it=0
     for i in range(nm):
@@ -111,8 +117,8 @@ ind_train, ind_test,\
     y_train, y_test = train_test_split(range(pRate_sc.shape[0]), pRate_sc,\
                                        test_size=0.5, random_state=42)
 
-X_train=X[ind_train,:,:,:].copy()
-X_test=X[ind_test,:,:,:].copy()
+X_train=X[ind_train,:,4,:].copy()
+X_test=X[ind_test,:,4,:].copy()
 
 import tensorflow as tf
 from tensorflow.keras.layers import *
@@ -131,10 +137,22 @@ model.add(tf.keras.layers.Dropout(0.1))
 model.add(tf.keras.layers.Dense(32, activation='relu'))
 model.add(tf.keras.layers.Dropout(0.1))
 model.add(tf.keras.layers.Dense(1))
+
+model1D=tf.keras.Sequential()
+model1D.add(tf.keras.layers.Conv1D(filters=16, kernel_size=3, \
+                                 kernel_regularizer=tf.keras.regularizers.L1(0.0001),input_shape=[9, npc+4]))
+model1D.add(tf.keras.layers.MaxPool1D())
+model1D.add(tf.keras.layers.Conv1D(filters=32,kernel_size=3,kernel_regularizer=tf.keras.regularizers.L1(0.0001),))
+model1D.add(tf.keras.layers.Flatten())
+model1D.add(tf.keras.layers.Dropout(0.1))
+model1D.add(tf.keras.layers.Dense(32, activation='relu'))
+model1D.add(tf.keras.layers.Dropout(0.1))
+model1D.add(tf.keras.layers.Dense(1))
 #radarProfilingCNN_3_less_reg.h5 (0.34216705905825723 -0.1722004783228311) (0.4738876406575849 0.30527402416256033)
 #radarProfilingCNN_3_less_reg.h5 tf.keras.regularizers.L1(0.0001
 itrain=1
 itrain=1
+model=model1D
 if itrain==1:
     model.compile(
         optimizer=tf.keras.optimizers.Adam(),  \
@@ -189,7 +207,7 @@ plt.ylabel('Estimated (mm/h)')
 plt.title('50 km average precipitation rate\nKaPR')
 cbar=plt.colorbar(c[-1])
 cbar.ax.set_title('Counts')
-plt.savefig('50kmPrecipDistrib.png')
+plt.savefig('50kmPrecipDistribKa1D.png')
 
 
 plt.figure()
@@ -219,9 +237,11 @@ ax.legend()
 ax.bar_label(rects1, padding=3)
 ax.bar_label(rects2, padding=3)
 plt.title('KaPR performance')
-plt.savefig('KaPR.png')
+plt.savefig('KaPR1D.png')
 
 fig.tight_layout()
 
 
+import tf.keras.utils
 
+#tf.keras.utils.plot_model(model, to_file="CNN_model.png", show_shapes=True)

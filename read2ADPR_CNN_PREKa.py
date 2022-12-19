@@ -51,7 +51,9 @@ sfcPrecip1L=sfcPrecip1L[:,np.newaxis]
 print("preparing tf model...")
 scalerZKu = StandardScaler()
 scalerPrec=StandardScaler()
-piaF=fh["piaF"][:,:,:,0]
+piaF=fh["piaF"][:,:,:,1]
+
+#stop
 
 #539424
 zKu9x9=np.swapaxes(zKuL,1,2)
@@ -94,7 +96,7 @@ for i in range(nm):
 X[:nt,:,:,npc]=pTypeL[:,:,:]/3.0
 X[:nt,:,:,npc+1]=(stormTop-5.2e3)/4.2e3
 X[:nt,:,:,npc+2]=(zmax-19.8)/8.23
-X[:nt,:,:,npc+3]=(piaF[:nt,:,:]-0.4)/2.
+X[:nt,:,:,npc+3]=(piaF[:nt,:,:]-2)/5.
 for iadd,ipos in enumerate(a[0]):
     it=0
     for i in range(nm):
@@ -224,4 +226,6 @@ plt.savefig('KaPR.png')
 fig.tight_layout()
 
 
+import tf.keras.utils
 
+tf.keras.utils.plot_model(model, to_file="CNN_model.png", show_shapes=True)
